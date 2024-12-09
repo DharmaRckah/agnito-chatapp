@@ -1,29 +1,39 @@
+
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-import { registerUser } from "../features/authSlice";
-import { connectSocket } from "../services/socket";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
 
 const RegisterPage = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const userData = { name, email, password };
-    dispatch(registerUser(userData)).then(({ payload }) => {
-      
-      connectSocket(payload.token); // Connect to socket with token after registering
-       alert("Registerd successful!");
-    });
+    try {
+      const response = await axios.post("/api/v1/auth/register", { name, email, password });
+      console.log(response)
+      toast.success(response?.data.message);
+      navigate("/");
+    } catch (error) {
+      console.log(error)
+      toast.error(error.response?.data.message || "Registration failed!");
+    }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="p-6 max-w-sm w-full bg-white shadow-md rounded-md">
+    <div
+      className="flex items-center justify-center min-h-screen bg-cover bg-center"
+      style={{
+        backgroundImage:
+          "url('https://plus.unsplash.com/premium_photo-1684761949804-fd8eb9a5b6cc?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+      }}
+    >
+      <div className="p-6 max-w-sm w-full bg-white bg-opacity-90 shadow-md rounded-md">
         <form onSubmit={handleSubmit}>
-          <h2 className="text-center text-2xl font-semibold mb-6 text-red-500">Register</h2>
+          <h2 className="text-center text-2xl font-semibold mb-6">Register</h2>
           <div className="mb-4">
             <label className="block text-gray-700">Name</label>
             <input
@@ -70,6 +80,7 @@ const RegisterPage = () => {
           </p>
         </div>
       </div>
+      <Toaster />
     </div>
   );
 };

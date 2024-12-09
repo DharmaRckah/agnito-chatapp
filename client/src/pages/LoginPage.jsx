@@ -1,43 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { loginUser } from "../features/authSlice";
-import { connectSocket } from "../services/socket";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from 'react-hot-toast';
+import axios from "axios";
+import toast, { Toaster } from "react-hot-toast";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
+
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const dispatch = useDispatch();
+  const [passwordVisible, setPasswordVisible] = useState(false); // State to track password visibility
   const navigate = useNavigate();
-  const { token, user } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    // If the user is already logged in, redirect based on their role
-    if (token && user?.role) {
-      connectSocket(token); // Connect to the socket if logged in
-      
-        navigate("/user/dashboard");
-      
-    }
-  }, [token, user, navigate]);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(loginUser({ email, password })).then(({ payload }) => {
-      if (payload?.accessToken) {
-        connectSocket(payload.accessToken);
-        toast.success("Login successful!")
-        // alert("Login successful!");
-
-      
-          if (payload?.user) {
-          navigate("/user/dashboard");
-        }
-      } else if (payload?.error) {
-        toast.error("Login failed. Please try again.")
-        alert(payload.error.message || "Login failed. Please try again.");
-      }
-    });
+    try {
+      const response = await axios.post("/api/v1/auth/login", { email, password });
+      const user = response.data.user;
+      sessionStorage.setItem("token", response.data.accessToken);
+      sessionStorage.setItem("user", JSON.stringify(user)); // Stringify the user object before storing
+      toast.success(response.data.message);
+      navigate("/user/dashboard");
+    } catch (error) {
+      toast.error(error.response?.data.message);
+    }
   };
 
   return (
@@ -61,15 +45,23 @@ const LoginPage = () => {
               required
             />
           </div>
-          <div className="mb-6">
+          <div className="mb-6 relative">
             <label className="block text-gray-700">Password</label>
             <input
-              type="password"
-              className="border p-2 w-full rounded-md"
+              type={passwordVisible ? "text" : "password"} // Toggle password visibility
+              className="border p-2 w-full rounded-md pr-10" // Added padding-right for the eye icon
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+            {/* Eye Icon for toggling password visibility */}
+            <button
+              type="button"
+              className="absolute right-2 top-1/2 transform "
+              onClick={() => setPasswordVisible(!passwordVisible)} // Toggle password visibility
+            >
+              {passwordVisible ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+            </button>
           </div>
           <button
             type="submit"
@@ -87,7 +79,7 @@ const LoginPage = () => {
           </p>
         </div>
       </div>
-      <Toaster/>
+      <Toaster />
     </div>
   );
 };

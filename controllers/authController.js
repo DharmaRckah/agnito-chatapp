@@ -50,7 +50,7 @@ export const login = async (req, res) => {
 
     // Validate required fields
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return res.status(400).json({ success:false,message: "Email and password are required" });
     }
 
      
@@ -61,7 +61,7 @@ export const login = async (req, res) => {
       })
     }
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(400).json({ error: "Invalid credentials" });
+      return res.status(400).json({success:false, message: "Invalid credentials" });
     }
 
     const accessToken = generateAccessToken(user._id);
@@ -75,6 +75,6 @@ export const login = async (req, res) => {
     res.json({success:true,message:"User Login Successfully",  user: userObject,accessToken, refreshToken });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error logging in" });
+    res.status(500).json({ success:false,message:error.message, error });
   }
 };
